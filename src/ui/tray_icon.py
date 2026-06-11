@@ -2,6 +2,7 @@ from PySide6.QtWidgets import QSystemTrayIcon, QMenu, QApplication, QStyle # Add
 from PySide6.QtGui import QIcon
 from config import Config
 from .styles import BASECAMP_QSS
+from .stats_window import StatsWindow
 
 class BasecampTrayIcon(QSystemTrayIcon):
     def __init__(self, db_manager):
@@ -32,7 +33,7 @@ class BasecampTrayIcon(QSystemTrayIcon):
         self.add_water_action = self.menu.addAction("💧 Quick Log: +330ml Water")
         self.add_water_action.triggered.connect(self.log_quick_water)
         
-        self.view_stats_action = self.menu.addAction("📊 View Today's Stats")
+        self.view_stats_action = self.menu.addAction("📊 View Stats History") 
         self.view_stats_action.triggered.connect(self.show_stats)
         
         self.menu.addSeparator()
@@ -52,26 +53,17 @@ class BasecampTrayIcon(QSystemTrayIcon):
             QSystemTrayIcon.Information, 
             2000
         )
-
     def show_stats(self):
-        """Pulls current database row and shows a native Windows notification."""
-        stats = self.db.get_today_stats()
+        """Opens the dedicated PySide calendar window."""
+        # We store it as self.stats_window so it doesn't get garbage collected and close immediately
+        if not hasattr(self, 'stats_window') or self.stats_window is None:
+            self.stats_window = StatsWindow(self.db)
+            
+        self.stats_window.show()
         
-        water = stats['water_ml']
-        screen_sec = stats['screen_time_sec']
-        exercises = stats['exercises_completed']
-        
-        # Format seconds into Hours and Minutes
-        hours = screen_sec // 3600
-        minutes = (screen_sec % 3600) // 60
-        
-        msg = (
-            f"💧 Water: {water}ml / {Config.DAILY_WATER_TARGET_ML}ml\n"
-            f"⏱️ Screen Time: {hours}h {minutes}m\n"
-            f"🏃‍♂️ Exercises: {exercises} sets"
-        )
-        
-        self.showMessage("Today's Basecamp Stats", msg, QSystemTrayIcon.Information, 5000)
+        # Forces the window to the front if it was hidden behind another app
+        self.stats_window.raise_()
+        self.stats_window.activateWindow()
 
     def quit_app(self):
         """Safe shutdown."""

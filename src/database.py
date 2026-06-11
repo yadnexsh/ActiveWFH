@@ -93,3 +93,20 @@ class DatabaseManager:
             cursor.execute(query, (today,))
             conn.commit()
         logger.info("Logged 1 completed exercise routine.")
+
+    def get_stats_for_date(self, target_date_str):
+            """Retrieves stats for a specific historical date (YYYY-MM-DD)."""
+            query = "SELECT water_ml, screen_time_sec, exercises_completed FROM daily_logs WHERE log_date = ?"
+            
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(query, (target_date_str,))
+                row = cursor.fetchone()
+                
+            if row:
+                return {
+                    "water_ml": row[0],
+                    "screen_time_sec": row[1],
+                    "exercises_completed": row[2]
+                }
+            return None

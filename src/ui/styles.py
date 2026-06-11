@@ -48,4 +48,25 @@ QPushButton#btn_done {
 QPushButton#btn_done:hover {
     background-color: #4a6b4d;
 }
+
+/* Calendar Styling */
+QCalendarWidget QWidget {
+    alternate-background-color: #3c3f41;
+    color: #e0e0e0;
+}
+QCalendarWidget QToolButton {
+    color: #e0e0e0;
+    background-color: #282a2e;
+    border: none;
+    font-weight: bold;
+    padding: 5px;
+}
+QCalendarWidget QMenu {
+    background-color: #282a2e;
+    color: #e0e0e0;
+}
+QCalendarWidget QSpinBox {
+    background-color: #3c3f41;
+    color: #e0e0e0;
+}
 """
