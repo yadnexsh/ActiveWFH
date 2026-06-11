@@ -1,4 +1,9 @@
 BASECAMP_QSS = """
+
+QWidget#stats_main_window {
+    background-color: #1e1f22; /* Kills the white background */
+}
+
 QFrame#bg_frame {
     background-color: #282a2e;
     border: 1px solid #3c3f41;
@@ -69,4 +74,40 @@ QCalendarWidget QSpinBox {
     background-color: #3c3f41;
     color: #e0e0e0;
 }
+
+QCalendarWidget QWidget {
+    background-color: #282a2e;
+    color: #e0e0e0;
+}
+
+/* Styles the actual grid of days */
+QCalendarWidget QAbstractItemView:enabled {
+    background-color: #282a2e;
+    color: #e0e0e0;
+    selection-background-color: #d18b47; /* Your orange theme color */
+    selection-color: #1e1f22;
+}
+
+/* The top bar (Month/Year and arrows) */
+QCalendarWidget QToolButton {
+    color: #e0e0e0;
+    background-color: transparent;
+    font-weight: bold;
+    border-radius: 4px;
+}
+
+QCalendarWidget QToolButton:hover {
+    background-color: #4e5254;
+}
+
+QCalendarWidget QMenu {
+    background-color: #282a2e;
+    color: #e0e0e0;
+}
+
+QCalendarWidget QSpinBox {
+    background-color: #3c3f41;
+    color: #e0e0e0;
+}
+
 """

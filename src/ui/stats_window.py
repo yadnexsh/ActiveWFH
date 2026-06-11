@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QCalendarWidget, QFrame
 from PySide6.QtCore import Qt, QDate
+from PySide6.QtGui import QTextCharFormat, QColor # ADD THESE TWO
 from config import Config
 from .styles import BASECAMP_QSS
 
@@ -11,12 +12,12 @@ class StatsWindow(QWidget):
         self.setWindowTitle("Basecamp Tracking History")
         self.setFixedSize(550, 300)
         
-        # Apply your dark theme globally to this specific window
+        # Give the main window an ID so we can paint it dark in styles.py
+        self.setObjectName("stats_main_window") 
+        
         self.setStyleSheet(BASECAMP_QSS)
 
         self.setup_ui()
-        
-        # Load today's data immediately upon opening
         self.update_stats(QDate.currentDate())
 
     def setup_ui(self):
@@ -27,7 +28,15 @@ class StatsWindow(QWidget):
         # --- Left Side: Calendar ---
         self.calendar = QCalendarWidget()
         self.calendar.setGridVisible(True)
-        # When you click a new date, it triggers the update function
+        
+        # Hide the ugly week numbers on the left side
+        self.calendar.setVerticalHeaderFormat(QCalendarWidget.NoVerticalHeader)
+        
+        # Force Sunday to stay a vibrant red in dark mode
+        sunday_format = QTextCharFormat()
+        sunday_format.setForeground(QColor("#ff4a4a")) 
+        self.calendar.setWeekdayTextFormat(Qt.Sunday, sunday_format)
+
         self.calendar.selectionChanged.connect(self.on_date_selected) 
         self.layout.addWidget(self.calendar)
 
@@ -56,7 +65,7 @@ class StatsWindow(QWidget):
         self.stats_layout.addStretch() # Pushes everything to the top
 
         self.layout.addWidget(self.stats_frame)
-
+        
     def on_date_selected(self):
         """Fires whenever the user clicks a new date on the calendar."""
         self.update_stats(self.calendar.selectedDate())
