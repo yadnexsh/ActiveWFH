@@ -37,7 +37,7 @@
 **Example Daily Log Output:**
 ```json
 Date: 2026-06-11
-Target Event: NIMAS BMC (April 2027)
+Target Event: NIM BMC (April 2027)
 
 Water Intake: 3630 ml / 4000 ml
 Active Screen Time: 07h 42m
@@ -45,6 +45,7 @@ Completed Micro-Workouts: 8 sets
 ```
 
 ### 🛠️ Architecture
+```
 basecamp-wfh-tracker/
  ├─ requirements.txt
  ├─ README.md
@@ -61,7 +62,7 @@ basecamp-wfh-tracker/
        ├─ stats_window.py
        ├─ styles.py          # Custom QSS stylesheet
        └─ tray_icon.py
-
+```
 ### ⚙️ Deployment
 Prerequisites: * Windows OS (Required for user32 and kernel32.dll telemetry hooks)
 
