@@ -15,7 +15,6 @@ class StatsWindow(QWidget):
         self.db = db_manager
         
         self.setWindowTitle("Basecamp Tracking History")
-        # MASSIVELY INCREASED WINDOW SIZE
         self.setFixedSize(850, 850) 
         self.setObjectName("stats_main_window") 
         self.setStyleSheet(BASECAMP_QSS)
@@ -35,6 +34,25 @@ class StatsWindow(QWidget):
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(10, 10, 10, 10)
         
+        # ==========================================
+        # OVERARCHING GOAL: BMC COUNTDOWN BANNER
+        # ==========================================
+        self.banner_frame = QFrame()
+        self.banner_frame.setObjectName("bg_frame")
+        self.banner_layout = QHBoxLayout(self.banner_frame)
+        self.banner_layout.setContentsMargins(10, 10, 10, 10)
+        
+        days_left = Config.get_days_to_bmc()
+        location = Config.BMC_LOCATION.upper()
+        self.banner_label = QLabel(f"🏔️ EXPEDITION COUNTDOWN: {days_left} DAYS UNTIL {location}")
+        # Applied the orange theme color to make it the focal point
+        self.banner_label.setStyleSheet("color: #d18b47; font-weight: bold; font-size: 14px; letter-spacing: 1px;")
+        self.banner_label.setAlignment(Qt.AlignCenter)
+        
+        self.banner_layout.addWidget(self.banner_label)
+        self.main_layout.addWidget(self.banner_frame)
+        # ==========================================
+
         self.tabs = QTabWidget()
         self.main_layout.addWidget(self.tabs)
         
@@ -81,7 +99,6 @@ class StatsWindow(QWidget):
         self.calendar.currentPageChanged.connect(self.update_header_labels)
         self.left_panel.addWidget(self.calendar)
         
-        # --- APPLIED YELLOW CSS THEME TO BUTTON ---
         self.btn_today = QPushButton("Jump to Today")
         self.btn_today.setObjectName("btn_jump_today")
         self.btn_today.clicked.connect(self.jump_to_today)
@@ -207,7 +224,6 @@ class StatsWindow(QWidget):
 
         self.graphs_main_layout.addWidget(self.graphs_left_widget, stretch=2) 
 
-        # --- Right Side: Details Panel ---
         self.graph_details_frame = QFrame()
         self.graph_details_frame.setObjectName("bg_frame")
         self.graph_details_layout = QVBoxLayout(self.graph_details_frame)

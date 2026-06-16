@@ -1,171 +1,115 @@
 import random
-from .styles import BASECAMP_QSS
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QApplication, QFrame
-from PySide6.QtCore import Qt, QPropertyAnimation, QPoint, QEasingCurve, Signal
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame
+from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, Signal
+from PySide6.QtGui import QGuiApplication
 from config import Config
-import random
+from .styles import BASECAMP_QSS
 
-class ReminderPopup(QWidget):
-    # Custom signals to tell the main app what the user chose
-    completed = Signal(int, bool) # Emits (water_ml, exercise_done)
-    snoozed = Signal()            # Emits when the user delays
+class PopupWidget(QWidget):
+    # UPGRADED SIGNAL: Now sends (Log_Water_Bool, Log_Exercise_Bool)
+    log_requested = Signal(bool, bool) 
 
     def __init__(self):
         super().__init__()
-        
-        # --- WINDOW SETUP ---
-        # Frameless, stays on top, and acts as a 'Tool' so it doesn't show in the taskbar
-        self.setWindowFlags(
-            Qt.FramelessWindowHint | 
-            Qt.WindowStaysOnTopHint | 
-            Qt.Tool
-        )
-        self.setAttribute(Qt.WA_TranslucentBackground) # Allows for rounded corners via CSS
-        
-        # Hardcoded size for the popup
-        self.setFixedSize(320, 180)
-        
-        # Pool of micro-exercises for load-carrying prep
-        self.exercises = [
-            "20 Calf Raises",
-            "15 Air Squats",
-            "2-Minute Wall Sit",
-            "20 Lunges (10 per leg)",
-            "30-Second Plank"
-        ]
-
-        self.setup_ui()
-        self.setup_animation()
-        # Add this exact line here:
+        self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.Tool)
+        self.setAttribute(Qt.WA_TranslucentBackground)
         self.setStyleSheet(BASECAMP_QSS)
         
+        self.has_active_exercise = False 
+        self.setup_ui()
+
     def setup_ui(self):
-        """Builds the internal layout of the popup with a background container."""
-        # 1. Main layout for the invisible top-level window (0 margins)
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(0, 0, 0, 0)
-
-        # 2. The visible background container
-        self.bg_frame = QFrame(self)
-        self.bg_frame.setObjectName("bg_frame") # We will target this in styles.py
         
-        # 3. The internal layout for your text/buttons goes INSIDE the frame
-        self.layout = QVBoxLayout(self.bg_frame)
-        self.layout.setContentsMargins(20, 20, 20, 20)
-        self.layout.setSpacing(10)
-
-        # Header Label
-        self.header_label = QLabel("BASECAMP: HOURLY CHECK-IN")
-        self.header_label.setAlignment(Qt.AlignCenter)
-        self.header_label.setObjectName("header_text") 
-        self.layout.addWidget(self.header_label)
-
-        # Water Prompt
-        water_amount = Config.WATER_PER_INTERVAL_ML
-        self.water_label = QLabel(f"💧 Drink {water_amount}ml of Water")
-        self.water_label.setAlignment(Qt.AlignCenter)
+        self.frame = QFrame()
+        self.frame.setObjectName("bg_frame")
+        self.frame_layout = QVBoxLayout(self.frame)
+        
+        self.title = QLabel("BASECAMP: HOURLY CHECK-IN")
+        self.title.setObjectName("header_text")
+        self.title.setAlignment(Qt.AlignCenter)
+        
+        self.water_label = QLabel(f"💧 Drink {Config.WATER_PER_INTERVAL_ML}ml of Water")
         self.water_label.setObjectName("task_text")
-        self.layout.addWidget(self.water_label)
-
-        # Movement Prompt
-        self.exercise_label = QLabel("🏃‍♂️ Loading exercise...")
-        self.exercise_label.setAlignment(Qt.AlignCenter)
+        self.water_label.setAlignment(Qt.AlignCenter)
+        
+        self.exercise_label = QLabel("🏃‍♂️ Loading...")
         self.exercise_label.setObjectName("task_text")
-        self.layout.addWidget(self.exercise_label)
-
-        # Buttons Layout
-        self.button_layout = QHBoxLayout()
+        self.exercise_label.setAlignment(Qt.AlignCenter)
+        
+        # --- Updated Button Layout ---
+        self.btn_layout = QHBoxLayout()
+        self.btn_layout.setSpacing(10)
         
         self.btn_done = QPushButton("Mark Done")
-        self.btn_done.setObjectName("btn_done")
-        self.btn_done.clicked.connect(self.on_done_clicked)
+        self.btn_done.setObjectName("btn_done") # Green primary button
+        
+        self.btn_water_only = QPushButton("Water Only")
+        self.btn_water_only.setObjectName("grid_btn") # Grey secondary button
         
         self.btn_snooze = QPushButton("Snooze (10m)")
-        self.btn_snooze.setObjectName("btn_snooze")
-        self.btn_snooze.clicked.connect(self.on_snooze_clicked)
+        self.btn_snooze.setObjectName("grid_btn") # Grey secondary button
+        
+        self.btn_done.clicked.connect(self.on_mark_done)
+        self.btn_water_only.clicked.connect(self.on_water_only)
+        self.btn_snooze.clicked.connect(self.on_snooze)
+        
+        self.btn_layout.addWidget(self.btn_done)
+        self.btn_layout.addWidget(self.btn_water_only)
+        self.btn_layout.addWidget(self.btn_snooze)
+        
+        self.frame_layout.addWidget(self.title)
+        self.frame_layout.addSpacing(10)
+        self.frame_layout.addWidget(self.water_label)
+        self.frame_layout.addSpacing(10)
+        self.frame_layout.addWidget(self.exercise_label)
+        self.frame_layout.addSpacing(15)
+        self.frame_layout.addLayout(self.btn_layout)
+        
+        self.main_layout.addWidget(self.frame)
 
-        self.button_layout.addWidget(self.btn_done)
-        self.button_layout.addWidget(self.btn_snooze)
-        self.layout.addLayout(self.button_layout)
+    def on_mark_done(self):
+        """Emits signal to log water AND exercise (if active)."""
+        self.log_requested.emit(True, self.has_active_exercise)
+        self.close()
 
-        # 4. Add the finished frame to the invisible main layout
-        self.main_layout.addWidget(self.bg_frame)
+    def on_water_only(self):
+        """Emits signal to log water ONLY, bypassing exercise."""
+        self.log_requested.emit(True, False)
+        self.close()
 
-    def setup_animation(self):
-        """Prepares the QPropertyAnimation for the slide-in effect."""
-        self.anim = QPropertyAnimation(self, b"pos")
-        self.anim.setDuration(400) # 400 milliseconds
-        # OutBack gives it a slight "bounce" when it stops sliding
-        self.anim.setEasingCurve(QEasingCurve.OutBack) 
+    def on_snooze(self):
+        self.close()
 
     def show_popup(self):
-        import random
-        from PySide6.QtGui import QGuiApplication
-        from PySide6.QtCore import QPropertyAnimation, QEasingCurve
-        from config import Config
-        
-        # 1. Fetch the active rotation from the config
         active_exercises = Config.get_active_exercises()
         
-        # 2. Pick a random exercise and format the text
         if not active_exercises:
+            self.has_active_exercise = False
             self.exercise_label.setText("🏃‍♂️ No active exercises in rotation!")
         else:
+            self.has_active_exercise = True
             ex = random.choice(active_exercises)
             name = ex.get("name", "Unknown")
-            sets = ex.get("sets")
-            reps = ex.get("reps")
-            time_sec = ex.get("time_sec")
+            sets, reps, time_sec = ex.get("sets"), ex.get("reps"), ex.get("time_sec")
             
-            if time_sec:
-                self.exercise_label.setText(f"🏃‍♂️ {name} ({time_sec} sec)")
-            elif sets and reps:
-                self.exercise_label.setText(f"🏃‍♂️ {name} ({sets}x{reps})")
-            else:
-                self.exercise_label.setText(f"🏃‍♂️ {name}")
+            if time_sec: self.exercise_label.setText(f"🏃‍♂️ {name} ({time_sec} sec)")
+            elif sets and reps: self.exercise_label.setText(f"🏃‍♂️ {name} ({sets}x{reps})")
+            else: self.exercise_label.setText(f"🏃‍♂️ {name}")
 
-        # 3. Calculate position (Bottom-Right corner of the primary screen)
         screen_geometry = QGuiApplication.primaryScreen().availableGeometry()
         target_x = screen_geometry.width() - self.width() - 20
         target_y = screen_geometry.height() - self.height() - 20
         self.move(target_x, target_y)
 
-        # 4. Show and Animate (Smooth Fade-In)
         self.setWindowOpacity(0.0)
         self.show()
-        self.raise_()           # Forces the window to the front
-        self.activateWindow()   # Grabs focus
+        self.raise_()           
+        self.activateWindow()   
 
         self.anim = QPropertyAnimation(self, b"windowOpacity")
-        self.anim.setDuration(400) # 400 milliseconds
+        self.anim.setDuration(400) 
         self.anim.setStartValue(0.0)
         self.anim.setEndValue(1.0)
         self.anim.setEasingCurve(QEasingCurve.InOutQuad)
         self.anim.start()
-
-    def hide_popup(self):
-        """Slides the window back down off-screen, then hides it."""
-        self.anim.setEasingCurve(QEasingCurve.InBack)
-        self.anim.setDirection(QPropertyAnimation.Backward)
-        
-        # When animation finishes going backward, actually hide the widget
-        self.anim.finished.connect(self.hide_and_reset)
-        self.anim.start()
-
-    def hide_and_reset(self):
-        self.hide()
-        # Disconnect to prevent multiple fires next time it hides
-        self.anim.finished.disconnect(self.hide_and_reset)
-        # Reset direction for the next time it shows
-        self.anim.setDirection(QPropertyAnimation.Forward)
-
-    def on_done_clicked(self):
-        """User accepted the challenge."""
-        self.hide_popup()
-        # Tell the main app to log the water and the exercise
-        self.completed.emit(Config.WATER_PER_INTERVAL_ML, True)
-
-    def on_snooze_clicked(self):
-        """User delayed the challenge."""
-        self.hide_popup()
-        self.snoozed.emit()
