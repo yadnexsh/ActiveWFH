@@ -6,9 +6,19 @@
 ## 🏔️ Core Capabilities
 
 ##### Automated Wellness Pings
-- Triggers frameless, non-intrusive popups every 60 minutes
-- Prompts consistent hydration (330ml increments)
-- Generates randomized micro-mobility exercises (e.g., Lunges, Calf Raises, Planks) to combat desk fatigue
+- Triggers frameless, non-intrusive popups based on user-defined intervals
+- Prompts consistent hydration (e.g., 330ml increments)
+- Generates randomized micro-mobility exercises to combat desk fatigue, pulling strictly from your active rotation list
+
+##### Dynamic Exercise Management
+- Complete in-app UI to manage your exercise pool without touching code
+- Dual-list "Active Rotation" system allows you to swap exercises in and out of your daily schedule
+- Real-time JSON syncing (`exercise.json`) for seamless state saving
+
+##### Interactive Telemetry Dashboard
+- Native PySide6 vector engine (`QPainter`) renders smooth, interactive spline area graphs
+- Dynamic timeframe filtering: view trends over the **Last 7 Days, 1 Month, or 3 Months**
+- Synchronized cross-graph highlighting: clicking a data point reveals detailed daily metrics in the side panel
 
 ##### Intelligent Screen Tracking
 - Utilizes native Windows API hooks (`ctypes`) to monitor actual active screen time
@@ -17,15 +27,11 @@
 
 ##### Hardcoded Schedule Guardrails
 - Enforces strict daily routines to maintain work-life boundaries
-- Built-in notifications for:
-  - Lunch break (1:00 PM)
-  - Dinner break
-  - Screen Blackout / Sleep preparation (11:00 PM)
+- Built-in notifications for Lunch, Dinner, and Screen Blackout / Sleep preparation
 
 ##### Peak Endurance Mode
 - Automatically alters tracking parameters on Sundays (tailored for Sinhgad Fort conditioning)
-- Pauses standard desk-bound telemetry
-- Bumps the daily hydration baseline target up to 5L
+- Pauses standard desk-bound telemetry and scales the daily hydration baseline target up to 5L
 
 ---
 
@@ -37,29 +43,33 @@
 **Example Daily Log Output:**
 ```json
 Date: 2026-06-11
-Target Event: NIM BMC (April 2027)
+Target Event: NIMAS BMC (April 2027)
 
 Water Intake: 3630 ml / 4000 ml
 Active Screen Time: 07h 42m
 Completed Micro-Workouts: 8 sets
 ```
-
 ### 🛠️ Architecture
 ```
 basecamp-wfh-tracker/
  ├─ requirements.txt
  ├─ README.md
+ ├─ launch_basecamp.bat      # Windows Autostart Script
  ├─ basecamp_data.sqlite     # Auto-generated on launch
  └─ src/                     
     ├─ main.py               # Application Entry Point
-    ├─ config.py             # Global settings & targets
-    ├─ database.py           # SQLite interface
+    ├─ config.py             # Global JSON configuration manager
+    ├─ database.py           # SQLite interface & timeline generation
     ├─ telemetry.py          # Background Windows API thread
+    ├─ config/               # Auto-generated runtime configurations
+    │  ├─ config.json        
+    │  └─ exercise.json      
     └─ ui/                   # PySide6 Components
        ├─ __init__.py
        ├─ popup_widget.py
        ├─ routine_alerts.py
-       ├─ stats_window.py
+       ├─ stats_window.py    # Main 3-Tab Dashboard Controller
+       ├─ graph_widget.py    # Native Spline/Area rendering engine
        ├─ styles.py          # Custom QSS stylesheet
        └─ tray_icon.py
 ```
@@ -82,12 +92,8 @@ python src/main.py
 
 The app will boot silently into your Windows System Tray.
 
-### 🚀 Roadmap
-- Add editable exercise lists via external JSON
-
-- Implement graphing for weekly screen-time vs. hydration trends
-
-- Custom alarm sound support for routine alerts
+## Autostart Setup:
+To have the application boot silently in the background upon Windows login, place a shortcut to launch_basecamp.bat in your Windows shell:startup folder, or configure a task via the Windows Task Scheduler.
 
 ### 📄 License
 MIT
