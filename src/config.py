@@ -21,7 +21,7 @@ class ConfigManager:
         if not cls.MAIN_CONFIG_PATH.exists():
             default_config = {
                 "app_settings": {
-                    "interval_ms": 3600000,
+                    "interval_minutes": 60, # <-- CHANGED: Now using human-readable minutes
                     "polling_rate_seconds": 60
                 },
                 "targets": {
@@ -64,32 +64,35 @@ class ConfigManager:
         cls.initialize()
         with open(cls.EXERCISE_JSON_PATH, 'r', encoding='utf-8') as f:
             return json.load(f).get("exercises", [])
-        
+
     @classmethod
     def save_exercises(cls, exercise_list):
         """Overwrites the exercise.json file with new data."""
         cls.initialize()
         with open(cls.EXERCISE_JSON_PATH, 'w', encoding='utf-8') as f:
             json.dump({"exercises": exercise_list}, f, indent=4)
-            
+
     @classmethod
     def get_active_exercises(cls):
         """Returns only the exercises that have been moved to the Active list."""
         all_ex = cls.get_exercises()
-        # If 'is_active' doesn't exist yet, it defaults to False
         return [ex for ex in all_ex if ex.get("is_active", False)]
 
+
 # 2. The Config Wrapper
-# This ensures we don't have to rewrite the rest of the application.
-# It loads the JSON data and assigns it to the exact variable names your app already uses.
 class Config:
     DB_PATH = ConfigManager.DB_PATH
     
-    # Load the JSON file into memory once
     _data = ConfigManager.load_main_config()
     
-    # Map the JSON keys to class attributes
-    INTERVAL_MS = _data["app_settings"]["interval_ms"]
+    # --- THE FIX ---
+    # Read the new 'interval_minutes' (fallback to 60 if missing)
+    INTERVAL_MINUTES = _data["app_settings"].get("interval_minutes", 60)
+    
+    # Automatically convert to milliseconds for Qt Timers!
+    # This prevents the rest of your app from crashing.
+    INTERVAL_MS = INTERVAL_MINUTES * 60 * 1000 
+    
     POLLING_RATE_SECONDS = _data["app_settings"]["polling_rate_seconds"]
     
     DAILY_WATER_TARGET_ML = _data["targets"]["daily_water_target_ml"]
@@ -102,35 +105,32 @@ class Config:
     @staticmethod
     def get_exercises():
         return ConfigManager.get_exercises()
-    
+        
     @staticmethod
     def save_exercises(exercise_list):
         ConfigManager.save_exercises(exercise_list)
-    
+
+    @staticmethod
+    def get_active_exercises():
+        return ConfigManager.get_active_exercises()
         
     @staticmethod
-    def reload():
-        """Call this if you want the app to re-read the config.json while running."""
-        Config._data = ConfigManager.load_main_config()
-        Config.INTERVAL_MS = Config._data["app_settings"]["interval_ms"]
-        Config.DAILY_WATER_TARGET_ML = Config._data["targets"]["daily_water_target_ml"]
-        Config.WATER_PER_INTERVAL_ML = Config._data["targets"]["water_per_interval_ml"]
-        
     def get_days_to_bmc():
         """Calculates the days remaining until the BMC start date."""
         from datetime import datetime
-        
-        # Parse the date string (e.g., "2027-04-01") from your JSON
         try:
             target = datetime.strptime(Config.BMC_TARGET_DATE, "%Y-%m-%d")
             today = datetime.now()
             delta = target - today
-            
-            # Return the days, ensuring it never goes below 0
             return max(0, delta.days)
         except ValueError:
-            # Fallback just in case someone types the JSON date wrong
             return 0
+
     @staticmethod
-    def get_active_exercises():
-        return ConfigManager.get_active_exercises()
+    def reload():
+        """Call this if you want the app to re-read the config.json while running."""
+        Config._data = ConfigManager.load_main_config()
+        Config.INTERVAL_MINUTES = Config._data["app_settings"].get("interval_minutes", 60)
+        Config.INTERVAL_MS = Config.INTERVAL_MINUTES * 60 * 1000 # Update the ms variable too
+        Config.DAILY_WATER_TARGET_ML = Config._data["targets"]["daily_water_target_ml"]
+        Config.WATER_PER_INTERVAL_ML = Config._data["targets"]["water_per_interval_ml"]

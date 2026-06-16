@@ -230,4 +230,16 @@ QLineEdit {
 QLineEdit:focus {
     border: 1px solid #d18b47;
 }
+/* --- Special Jump to Today Button --- */
+QPushButton#btn_jump_today {
+    background-color: #d18b47;
+    color: #1e1f22;
+    border: 1px solid #b5763a;
+    font-weight: bold;
+    padding: 8px;
+    border-radius: 4px;
+}
+QPushButton#btn_jump_today:hover {
+    background-color: #eab075;
+}
 """

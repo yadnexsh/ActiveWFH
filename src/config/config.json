@@ -1,6 +1,6 @@
 {
     "app_settings": {
-        "interval_ms": 10000,
+        "interval_minutes": 60,
         "polling_rate_seconds": 60
     },
     "targets": {
