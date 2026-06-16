@@ -21,8 +21,9 @@ class ConfigManager:
         if not cls.MAIN_CONFIG_PATH.exists():
             default_config = {
                 "app_settings": {
-                    "interval_minutes": 60, # <-- CHANGED: Now using human-readable minutes
-                    "polling_rate_seconds": 60
+                    "interval_minutes": 60,
+                    "polling_rate_seconds": 60,
+                    "idle_timeout_seconds": 120  # <--- ADDED HERE
                 },
                 "targets": {
                     "daily_water_target_ml": 4000,
@@ -85,15 +86,13 @@ class Config:
     
     _data = ConfigManager.load_main_config()
     
-    # --- THE FIX ---
-    # Read the new 'interval_minutes' (fallback to 60 if missing)
     INTERVAL_MINUTES = _data["app_settings"].get("interval_minutes", 60)
-    
-    # Automatically convert to milliseconds for Qt Timers!
-    # This prevents the rest of your app from crashing.
     INTERVAL_MS = INTERVAL_MINUTES * 60 * 1000 
     
-    POLLING_RATE_SECONDS = _data["app_settings"]["polling_rate_seconds"]
+    POLLING_RATE_SECONDS = _data["app_settings"].get("polling_rate_seconds", 60)
+    
+    # --- ADDED SAFELY WITH A FALLBACK ---
+    IDLE_TIMEOUT_SECONDS = _data["app_settings"].get("idle_timeout_seconds", 120) 
     
     DAILY_WATER_TARGET_ML = _data["targets"]["daily_water_target_ml"]
     TREK_DAY_WATER_TARGET_ML = _data["targets"]["trek_day_water_target_ml"]
@@ -131,6 +130,7 @@ class Config:
         """Call this if you want the app to re-read the config.json while running."""
         Config._data = ConfigManager.load_main_config()
         Config.INTERVAL_MINUTES = Config._data["app_settings"].get("interval_minutes", 60)
-        Config.INTERVAL_MS = Config.INTERVAL_MINUTES * 60 * 1000 # Update the ms variable too
+        Config.INTERVAL_MS = Config.INTERVAL_MINUTES * 60 * 1000 
+        Config.IDLE_TIMEOUT_SECONDS = Config._data["app_settings"].get("idle_timeout_seconds", 120)
         Config.DAILY_WATER_TARGET_ML = Config._data["targets"]["daily_water_target_ml"]
         Config.WATER_PER_INTERVAL_ML = Config._data["targets"]["water_per_interval_ml"]

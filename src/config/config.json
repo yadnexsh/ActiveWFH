@@ -1,7 +1,8 @@
 {
     "app_settings": {
         "interval_minutes": 60,
-        "polling_rate_seconds": 60
+        "polling_rate_seconds": 60,
+        "idle_timeout_seconds": 300
     },
     "targets": {
         "daily_water_target_ml": 4000,
